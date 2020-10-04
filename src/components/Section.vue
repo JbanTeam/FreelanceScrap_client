@@ -1,7 +1,7 @@
 <template>
   <section class="section">
     <h4 class="section-title font-weight-bold d-flex align-items-center bg-primary p-1 mb-2" @click="opened = !opened">
-      <span>{{title}} - <span class="projects-count text-warning mr-5">{{projects.length}}</span></span>
+      <span>{{section}} - <span class="projects-count text-warning mr-5">{{projects.length}}</span></span>
       <span class="new-count bg-light text-danger" v-if="newProjects.length">{{newProjects.length}}</span>
     </h4>
     <div class="wrap" v-if="opened">
@@ -13,9 +13,9 @@
         <button class="pagination-btn new-btn" :class="!newProjects.length || !allOpened ? 'disabled' : ''" :disabled="!newProjects.length || !allOpened" @click="cardsOpen">new</button>
         <button class="pagination-btn reset-btn" :class="!newProjects.length ? 'disabled' : ''" :disabled="!newProjects.length" @click="resetNew">reset new</button>
       </div>
-      <!-- TODO: если проект является новым, то во вкладке all пометить его как new -->
+      <!-- TODO: если проект является новым, то во вкладке all пометить его как new(fix reactive newProjects) -->
       <div class="cards">
-        <Card v-for="(item) in projectsPerPage" :key="item.link" :proj="item" :section="title" :freelance="freelance" />
+        <Card v-for="(item) in projectsPerPage" :key="item.link" :proj="item" :section="section" :freelance="freelance" :newProjects="newProjects" />
       </div>
       <div class="pagination">
         <button class="pagination-btn" :class="currentPage === 0 ? 'disabled' : ''" :disabled="currentPage === 0" @click="prevPage">prev</button>
@@ -32,7 +32,7 @@
 <script>
 import Card from "./Card";
 export default {
-  props: ["projects", "newProjects", "title", "freelance"],
+  props: ["projects", "newProjects", "section", "freelance"],
   components: {
     Card,
   },
@@ -80,7 +80,7 @@ export default {
       this.allOpened = true;
       this.$store.dispatch("resetNewProjects", {
         freelance: this.freelance,
-        section: this.title,
+        section: this.section,
       });
     },
   },

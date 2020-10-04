@@ -1,5 +1,6 @@
 import axios from 'axios';
-import moment from 'moment';
+// import moment from 'moment';
+import Vue from 'vue';
 
 import { diff, newExists } from '../utils';
 
@@ -10,8 +11,6 @@ export default {
     weblancerProjects: null,
     weblancerPrevProjects: null,
     weblancerNewProjects: {},
-    weblancerUpdateTime: null,
-    weblancerNextUpdate: null,
   },
   getters: {
     getWeblancerProjects(state) {
@@ -23,12 +22,6 @@ export default {
     isWeblancerLoading(state) {
       return state.weblancerLoading;
     },
-    getWeblancerUpdateTime(state) {
-      return state.weblancerUpdateTime;
-    },
-    getWeblancerNextUpdate(state) {
-      return state.weblancerNextUpdate;
-    },
   },
   mutations: {
     setError(state, payload) {
@@ -39,12 +32,6 @@ export default {
     },
     setWeblancerLoading(state, payload) {
       state.weblancerLoading = payload;
-    },
-    setWeblancerUpdateTime(state, payload) {
-      state.weblancerUpdateTime = payload;
-    },
-    setWeblancerNextUpdate(state, payload) {
-      state.weblancerNextUpdate = payload;
     },
     setWeblancerProjects(state, payload) {
       state.weblancerProjects = payload;
@@ -60,22 +47,20 @@ export default {
       }
     },
     resetNewWeblancerProjects(state, payload) {
-      state.weblancerNewProjects[payload.section] = [];
+      Vue.set(state.weblancerNewProjects, '' + payload.section, []);
+      // state.weblancerNewProjects[payload.section] = [];
     },
     addToWeblancerProjects(state, payload) {
       state.weblancerProjects = { ...state.weblancerProjects, ...payload };
     },
   },
   actions: {
-    async fetchWeblancerProjects({ dispatch, commit }) {
+    async fetchWeblancerProjects({ commit }) {
       commit('clearError');
       commit('setWeblancerLoading', true);
       try {
-        let run = await axios.get('http://localhost:5000/api/weblancer-start?type=cheerio');
+        return await axios.get('http://localhost:5000/api/weblancer-start?type=cheerio');
         // console.log(run.data);
-        if (run.data.start) {
-          await dispatch('recursiveWeblancerLoad');
-        }
       } catch (error) {
         console.log(error);
       }
@@ -118,31 +103,6 @@ export default {
         console.log(error);
         commit('setWeblancerLoading', false);
       }
-    },
-    async recursiveWeblancerLoad({ dispatch }) {
-      console.log('weblancer start projects read');
-      try {
-        await dispatch('readWeblancerProjects', { cnt: 0 }).then((date) => {
-          dispatch('nextLoadWeblancer', { date });
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async nextLoadWeblancer({ dispatch, commit }, payload) {
-      let start = moment('3:00', 'm:ss');
-      let seconds = start.minutes() * 60;
-      commit('setWeblancerUpdateTime', payload.date);
-      commit('setWeblancerNextUpdate', start.format('m:ss'));
-      let interval = setInterval(async () => {
-        let timerDisplay = start.subtract(1, 'second').format('m:ss');
-        commit('setWeblancerNextUpdate', timerDisplay);
-        seconds--;
-        if (seconds === 0) {
-          clearInterval(interval);
-          await dispatch('recursiveWeblancerLoad');
-        }
-      }, 1000);
     },
     // общая функция сброса, подставляется только название
     resetNewProjects({ commit }, payload) {

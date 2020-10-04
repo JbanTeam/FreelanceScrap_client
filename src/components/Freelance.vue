@@ -6,7 +6,7 @@
     <span v-if="nextUpdate !== null" class="text-danger font-weight-bold">Next Update: <span class="text-dark">{{nextUpdate}}</span></span>
     <p v-if="loading">Loading...</p>
     <div class="sections" v-if="projects !== null">
-      <Section v-for="(proj, section) in projects" :projects="proj" :newProjects="newProjects[section] !== undefined ? newProjects[section] : []" :title="section" :freelance="freelance" :key="section" />
+      <Section v-for="(proj, section) in projects" :projects="proj" :newProjects="newProjects[section] !== undefined ? newProjects[section] : []" :section="section" :freelance="freelance" :key="section" />
     </div>
     <div v-else>
       Projects not loaded.
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-// import moment from 'moment';
+import moment from "moment";
 import Section from "./Section";
 export default {
   props: ["projects", "newProjects", "freelance"],
@@ -27,24 +27,47 @@ export default {
   data() {
     return {
       btnDisabled: false,
-      // nextUpdate: null,
+      updateTime: null,
+      nextUpdate: null,
     };
   },
   computed: {
     loading() {
       return this.$store.getters[`is${this.freelance}Loading`];
     },
-    updateTime() {
-      return this.$store.getters[`get${this.freelance}UpdateTime`];
-    },
-    nextUpdate() {
-      return this.$store.getters[`get${this.freelance}NextUpdate`];
-    },
   },
   methods: {
     async load() {
       this.btnDisabled = true;
-      await this.$store.dispatch(`fetch${this.freelance}Projects`);
+      let run = await this.$store.dispatch(`fetch${this.freelance}Projects`);
+      if (run.data.start) {
+        await this.recursiveLoad();
+      }
+    },
+    async recursiveLoad() {
+      console.log(`${this.freelance} start projects read`);
+      try {
+        let date = await this.$store.dispatch(`read${this.freelance}Projects`, {
+          cnt: 0,
+        });
+        await this.nextLoad(date);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    async nextLoad(date) {
+      let start = moment("1:00", "m:ss");
+      let seconds = start.minutes() * 60;
+      this.updateTime = date;
+      this.nextUpdate = start.format("m:ss");
+      let interval = setInterval(async () => {
+        this.nextUpdate = start.subtract(1, "second").format("m:ss");
+        seconds--;
+        if (seconds === 0) {
+          clearInterval(interval);
+          await this.recursiveLoad();
+        }
+      }, 1000);
     },
   },
 };

@@ -3,7 +3,7 @@
     <h5 class="mb-1 font-weight-bold">{{proj.title}}
       <span v-if="proj.premium !== undefined && proj.premium" class="text-danger ml-2">"Premium"</span>
       <span v-if="proj.fast !== undefined && proj.fast" class="text-danger ml-2">"Fast"</span>
-      <span v-if="proj.fixed !== undefined && proj.fixed" class="text-danger">"Fixed"</span>
+      <span v-if="proj.fixed !== undefined && proj.fixed" class="text-danger ml-2">"Fixed"</span>
       <span v-if="newProj" class="text-danger">"New"</span>
     </h5>
     <a class="mb-1" :href="proj.link" target="_blank" rel="noopener noreferrer">{{proj.link}}</a>
@@ -23,7 +23,7 @@
 
 <script>
 export default {
-  props: ["proj", "section", "freelance"],
+  props: ["proj", "newProjects", "section", "freelance"],
   data() {
     return {
       secondaryOpened: false,
@@ -56,12 +56,9 @@ export default {
       return this.proj.published === null ? "null" : this.proj.published;
     },
     newProj() {
-      let newProjects = this.$store.getters[`get${this.freelance}NewProjects`][
-        this.section
-      ];
-      if (newProjects !== undefined) {
+      if (this.newProjects !== undefined) {
         let arr = [];
-        newProjects.forEach((obj1) => {
+        this.newProjects.forEach((obj1) => {
           arr.push(obj1.link);
         });
         return arr.indexOf(this.proj.link) !== -1;

@@ -1,5 +1,6 @@
 import axios from 'axios';
-import moment from 'moment';
+// import moment from 'moment';
+import Vue from 'vue';
 
 import { diff, newExists } from '../utils';
 
@@ -10,8 +11,6 @@ export default {
     flruProjects: null,
     flruPrevProjects: null,
     flruNewProjects: {},
-    flruUpdateTime: null,
-    flruNextUpdate: null,
   },
   getters: {
     getFlruProjects(state) {
@@ -23,12 +22,6 @@ export default {
     isFlruLoading(state) {
       return state.flruLoading;
     },
-    getFlruUpdateTime(state) {
-      return state.flruUpdateTime;
-    },
-    getFlruNextUpdate(state) {
-      return state.flruNextUpdate;
-    },
   },
   mutations: {
     setError(state, payload) {
@@ -39,12 +32,6 @@ export default {
     },
     setFlruLoading(state, payload) {
       state.flruLoading = payload;
-    },
-    setFlruUpdateTime(state, payload) {
-      state.flruUpdateTime = payload;
-    },
-    setFlruNextUpdate(state, payload) {
-      state.flruNextUpdate = payload;
     },
     setFlruProjects(state, payload) {
       state.flruProjects = payload;
@@ -60,22 +47,20 @@ export default {
       }
     },
     resetNewFlruProjects(state, payload) {
-      state.flruNewProjects[payload.section] = [];
+      Vue.set(state.flruNewProjects, '' + payload.section, []);
+      // state.flruNewProjects[payload.section] = [];
     },
     addToFlruProjects(state, payload) {
       state.flruProjects = { ...state.flruProjects, ...payload };
     },
   },
   actions: {
-    async fetchFlruProjects({ dispatch, commit }) {
+    async fetchFlruProjects({ commit }) {
       commit('clearError');
       commit('setFlruLoading', true);
       try {
-        let run = await axios.get('http://localhost:5000/api/flru-start');
+        return await axios.get('http://localhost:5000/api/flru-start');
         // console.log(run.data);
-        if (run.data.start) {
-          await dispatch('recursiveFlruLoad');
-        }
       } catch (error) {
         console.log(error);
       }
@@ -118,31 +103,6 @@ export default {
         console.log(error);
         commit('setFlruLoading', false);
       }
-    },
-    async recursiveFlruLoad({ dispatch }) {
-      console.log('flru start projects read');
-      try {
-        await dispatch('readFlruProjects', { cnt: 0 }).then((date) => {
-          dispatch('nextLoadFlru', { date });
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async nextLoadFlru({ dispatch, commit }, payload) {
-      let start = moment('3:00', 'm:ss');
-      let seconds = start.minutes() * 60;
-      commit('setFlruUpdateTime', payload.date);
-      commit('setFlruNextUpdate', start.format('m:ss'));
-      let interval = setInterval(async () => {
-        let timerDisplay = start.subtract(1, 'second').format('m:ss');
-        commit('setFlruNextUpdate', timerDisplay);
-        seconds--;
-        if (seconds === 0) {
-          clearInterval(interval);
-          await dispatch('recursiveFlruLoad');
-        }
-      }, 1000);
     },
   },
 };

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import moment from 'moment';
+// import moment from 'moment';
 
 import { diff, newExists } from '../utils';
 
@@ -10,8 +10,6 @@ export default {
     flhabrProjects: null,
     flhabrPrevProjects: null,
     flhabrNewProjects: {},
-    flhabrUpdateTime: null,
-    flhabrNextUpdate: null,
   },
   getters: {
     getFlhabrProjects(state) {
@@ -23,12 +21,6 @@ export default {
     isFlhabrLoading(state) {
       return state.flhabrLoading;
     },
-    getFlhabrUpdateTime(state) {
-      return state.flhabrUpdateTime;
-    },
-    getFlhabrNextUpdate(state) {
-      return state.flhabrNextUpdate;
-    },
   },
   mutations: {
     setError(state, payload) {
@@ -39,12 +31,6 @@ export default {
     },
     setFlhabrLoading(state, payload) {
       state.flhabrLoading = payload;
-    },
-    setFlhabrUpdateTime(state, payload) {
-      state.flhabrUpdateTime = payload;
-    },
-    setFlhabrNextUpdate(state, payload) {
-      state.flhabrNextUpdate = payload;
     },
     setFlhabrProjects(state, payload) {
       state.flhabrProjects = payload;
@@ -67,15 +53,12 @@ export default {
     },
   },
   actions: {
-    async fetchFlhabrProjects({ dispatch, commit }) {
+    async fetchFlhabrProjects({ commit }) {
       commit('clearError');
       commit('setFlhabrLoading', true);
       try {
-        let run = await axios.get('http://localhost:5000/api/flhabr-start');
+        return await axios.get('http://localhost:5000/api/flhabr-start');
         // console.log(run.data);
-        if (run.data.start) {
-          await dispatch('recursiveFlhabrLoad');
-        }
       } catch (error) {
         console.log(error);
       }
@@ -118,31 +101,6 @@ export default {
         console.log(error);
         commit('setFlhabrLoading', false);
       }
-    },
-    async recursiveFlhabrLoad({ dispatch }) {
-      console.log('flhabr start projects read');
-      try {
-        await dispatch('readFlhabrProjects', { cnt: 0 }).then((date) => {
-          dispatch('nextLoadFlhabr', { date });
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async nextLoadFlhabr({ dispatch, commit }, payload) {
-      let start = moment('3:00', 'm:ss');
-      let seconds = start.minutes() * 60;
-      commit('setFlhabrUpdateTime', payload.date);
-      commit('setFlhabrNextUpdate', start.format('m:ss'));
-      let interval = setInterval(async () => {
-        let timerDisplay = start.subtract(1, 'second').format('m:ss');
-        commit('setFlhabrNextUpdate', timerDisplay);
-        seconds--;
-        if (seconds === 0) {
-          clearInterval(interval);
-          await dispatch('recursiveFlhabrLoad');
-        }
-      }, 1000);
     },
   },
 };

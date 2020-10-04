@@ -1,5 +1,5 @@
 import axios from 'axios';
-import moment from 'moment';
+// import moment from 'moment';
 
 import { diff, newExists } from '../utils';
 
@@ -10,8 +10,6 @@ export default {
     freelanceruProjects: null,
     freelanceruPrevProjects: null,
     freelanceruNewProjects: {},
-    freelanceruUpdateTime: null,
-    freelanceruNextUpdate: null,
   },
   getters: {
     getFreelanceruProjects(state) {
@@ -23,12 +21,6 @@ export default {
     isFreelanceruLoading(state) {
       return state.freelanceruLoading;
     },
-    getFreelanceruUpdateTime(state) {
-      return state.freelanceruUpdateTime;
-    },
-    getFreelanceruNextUpdate(state) {
-      return state.freelanceruNextUpdate;
-    },
   },
   mutations: {
     setError(state, payload) {
@@ -39,12 +31,6 @@ export default {
     },
     setFreelanceruLoading(state, payload) {
       state.freelanceruLoading = payload;
-    },
-    setFreelanceruUpdateTime(state, payload) {
-      state.freelanceruUpdateTime = payload;
-    },
-    setFreelanceruNextUpdate(state, payload) {
-      state.freelanceruNextUpdate = payload;
     },
     setFreelanceruProjects(state, payload) {
       state.freelanceruProjects = payload;
@@ -67,15 +53,12 @@ export default {
     },
   },
   actions: {
-    async fetchFreelanceruProjects({ dispatch, commit }) {
+    async fetchFreelanceruProjects({ commit }) {
       commit('clearError');
       commit('setFreelanceruLoading', true);
       try {
-        let run = await axios.get('http://localhost:5000/api/freelanceru-start');
+        return await axios.get('http://localhost:5000/api/freelanceru-start');
         // console.log(run.data);
-        if (run.data.start) {
-          await dispatch('recursiveFreelaceruLoad');
-        }
       } catch (error) {
         console.log(error);
       }
@@ -118,31 +101,6 @@ export default {
         console.log(error);
         commit('setFreelanceruLoading', false);
       }
-    },
-    async recursiveFreelaceruLoad({ dispatch }) {
-      console.log('freelanceru start projects read');
-      try {
-        await dispatch('readFreelanceruProjects', { cnt: 0 }).then((date) => {
-          dispatch('nextLoadFreelanceru', { date });
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async nextLoadFreelanceru({ dispatch, commit }, payload) {
-      let start = moment('3:00', 'm:ss');
-      let seconds = start.minutes() * 60;
-      commit('setFreelanceruUpdateTime', payload.date);
-      commit('setFreelanceruNextUpdate', start.format('m:ss'));
-      let interval = setInterval(async () => {
-        let timerDisplay = start.subtract(1, 'second').format('m:ss');
-        commit('setFreelanceruNextUpdate', timerDisplay);
-        seconds--;
-        if (seconds === 0) {
-          clearInterval(interval);
-          await dispatch('recursiveFreelaceruLoad');
-        }
-      }, 1000);
     },
   },
 };

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import moment from 'moment';
+// import moment from 'moment';
 
 import { diff, newExists } from '../utils';
 
@@ -10,8 +10,6 @@ export default {
     flhuntProjects: null,
     flhuntPrevProjects: null,
     flhuntNewProjects: {},
-    flhuntUpdateTime: null,
-    flhuntNextUpdate: null,
   },
   getters: {
     getFlhuntProjects(state) {
@@ -23,12 +21,6 @@ export default {
     isFlhuntLoading(state) {
       return state.flhuntLoading;
     },
-    getFlhuntUpdateTime(state) {
-      return state.flhuntUpdateTime;
-    },
-    getFlhuntNextUpdate(state) {
-      return state.flhuntNextUpdate;
-    },
   },
   mutations: {
     setError(state, payload) {
@@ -39,12 +31,6 @@ export default {
     },
     setFlhuntLoading(state, payload) {
       state.flhuntLoading = payload;
-    },
-    setFlhuntUpdateTime(state, payload) {
-      state.flhuntUpdateTime = payload;
-    },
-    setFlhuntNextUpdate(state, payload) {
-      state.flhuntNextUpdate = payload;
     },
     setFlhuntProjects(state, payload) {
       state.flhuntProjects = payload;
@@ -67,15 +53,12 @@ export default {
     },
   },
   actions: {
-    async fetchFlhuntProjects({ dispatch, commit }) {
+    async fetchFlhuntProjects({ commit }) {
       commit('clearError');
       commit('setFlhuntLoading', true);
       try {
-        let run = await axios.get('http://localhost:5000/api/flhunt-start?type=cheerio');
+        return await axios.get('http://localhost:5000/api/flhunt-start?type=cheerio');
         // console.log(run.data);
-        if (run.data.start) {
-          await dispatch('recursiveFlhuntLoad');
-        }
       } catch (error) {
         console.log(error);
       }
@@ -118,31 +101,6 @@ export default {
         console.log(error);
         commit('setFlhuntLoading', false);
       }
-    },
-    async recursiveFlhuntLoad({ dispatch }) {
-      console.log('flhunt start projects read');
-      try {
-        await dispatch('readFlhuntProjects', { cnt: 0 }).then((date) => {
-          dispatch('nextLoadFlhunt', { date });
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async nextLoadFlhunt({ dispatch, commit }, payload) {
-      let start = moment('3:00', 'm:ss');
-      let seconds = start.minutes() * 60;
-      commit('setFlhuntUpdateTime', payload.date);
-      commit('setFlhuntNextUpdate', start.format('m:ss'));
-      let interval = setInterval(async () => {
-        let timerDisplay = start.subtract(1, 'second').format('m:ss');
-        commit('setFlhuntNextUpdate', timerDisplay);
-        seconds--;
-        if (seconds === 0) {
-          clearInterval(interval);
-          await dispatch('recursiveFlhuntLoad');
-        }
-      }, 1000);
     },
   },
 };
