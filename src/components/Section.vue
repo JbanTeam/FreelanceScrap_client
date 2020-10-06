@@ -13,7 +13,6 @@
         <button class="pagination-btn new-btn" :class="!newProjects.length || !allOpened ? 'disabled' : ''" :disabled="!newProjects.length || !allOpened" @click="cardsOpen">new</button>
         <button class="pagination-btn reset-btn" :class="!newProjects.length ? 'disabled' : ''" :disabled="!newProjects.length" @click="resetNew">reset new</button>
       </div>
-      <!-- TODO: если проект является новым, то во вкладке all пометить его как new(fix reactive newProjects) -->
       <div class="cards">
         <Card v-for="(item) in projectsPerPage" :key="item.link" :proj="item" :section="section" :freelance="freelance" :newProjects="newProjects" />
       </div>
@@ -78,8 +77,8 @@ export default {
     },
     resetNew() {
       this.allOpened = true;
-      this.$store.dispatch("resetNewProjects", {
-        freelance: this.freelance,
+      this.$store.commit("resetNewProjects", {
+        freelance: this.freelance.toLowerCase(),
         section: this.section,
       });
     },

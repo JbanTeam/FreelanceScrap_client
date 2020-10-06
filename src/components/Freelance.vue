@@ -29,6 +29,7 @@ export default {
       btnDisabled: false,
       updateTime: null,
       nextUpdate: null,
+      sound: null,
     };
   },
   computed: {
@@ -39,16 +40,20 @@ export default {
   methods: {
     async load() {
       this.btnDisabled = true;
-      let run = await this.$store.dispatch(`fetch${this.freelance}Projects`);
+      let run = await this.$store.dispatch(`fetchProjects`, {
+        freelance: this.freelance.toLowerCase(),
+      });
       if (run.data.start) {
-        await this.recursiveLoad();
+        await this.recursiveLoad(true);
       }
     },
-    async recursiveLoad() {
+    async recursiveLoad(firstTime) {
       console.log(`${this.freelance} start projects read`);
       try {
-        let date = await this.$store.dispatch(`read${this.freelance}Projects`, {
+        let date = await this.$store.dispatch(`readProjects`, {
           cnt: 0,
+          freelance: this.freelance.toLowerCase(),
+          firstTime,
         });
         await this.nextLoad(date);
       } catch (error) {
@@ -65,7 +70,7 @@ export default {
         seconds--;
         if (seconds === 0) {
           clearInterval(interval);
-          await this.recursiveLoad();
+          await this.recursiveLoad(false);
         }
       }, 1000);
     },

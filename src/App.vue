@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <h1 class="main-title">Freelance Scrap Projects</h1>
-    <!-- TODO: если есть новые проекты то проигрывать звуковой сигнал -->
     <div class="tabs">
       <div class="tabs-triggers">
         <a :href="'#' + component.title" class="tabs-triggers__item font-weight-bold" :class="{'active': isActive(component.title)}" v-for="component in flComponents" :key="component.title" @click.prevent="setActive(component.title)">
