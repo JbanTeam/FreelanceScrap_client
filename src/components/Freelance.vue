@@ -38,6 +38,7 @@ export default {
     },
   },
   methods: {
+    // TODO: abort method
     async load() {
       this.btnDisabled = true;
       let run = await this.$store.dispatch(`fetchProjects`, {

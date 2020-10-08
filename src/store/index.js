@@ -3,7 +3,7 @@ import Vuex from 'vuex';
 
 import axios from 'axios';
 
-import { diff, newExists } from '../utils';
+// import { diff, newExists } from '../utils';
 
 Vue.use(Vuex);
 
@@ -12,27 +12,22 @@ export default new Vuex.Store({
     weblancerError: '',
     weblancerLoading: false,
     weblancerProjects: null,
-    weblancerPrevProjects: null,
     weblancerNewProjects: {},
     flhuntError: '',
     flhuntLoading: false,
     flhuntProjects: null,
-    flhuntPrevProjects: null,
     flhuntNewProjects: {},
     flhabrError: '',
     flhabrLoading: false,
     flhabrProjects: null,
-    flhabrPrevProjects: null,
     flhabrNewProjects: {},
     freelanceruError: '',
     freelanceruLoading: false,
     freelanceruProjects: null,
-    freelanceruPrevProjects: null,
     freelanceruNewProjects: {},
     flruError: '',
     flruLoading: false,
     flruProjects: null,
-    flruPrevProjects: null,
     flruNewProjects: {},
   },
   getters: {
@@ -93,51 +88,50 @@ export default new Vuex.Store({
       state[`${payload.freelance}Loading`] = payload.val;
     },
     setProjects(state, payload) {
-      state[`${payload.freelance}Projects`] = payload.data;
-    },
-    setPrevProjects(state, payload) {
-      // state[`${payload.freelance}PrevProjects`] = state[`${payload.freelance}Projects`];
-      if (state[`${payload.freelance}PrevProjects`] === null) {
-        state[`${payload.freelance}PrevProjects`] = {};
+      // console.log(payload.data);
+      let arrName = payload.data.arrName;
+      let freelance = payload.freelance;
+      if (state[`${freelance}Projects`] === null) {
+        state[`${freelance}Projects`] = {};
       }
-      for (const proj in state[`${payload.freelance}Projects`]) {
-        Vue.set(
-          state[`${payload.freelance}PrevProjects`],
-          '' + proj,
-          state[`${payload.freelance}Projects`][proj].map((obj) => Object.assign({}, obj))
-        );
+      Vue.set(
+        state[`${freelance}Projects`],
+        '' + arrName,
+        payload.data[arrName].map((obj) => Object.assign({}, obj))
+      );
+    },
+    addToProjects(state, payload) {
+      console.log(payload.data);
+      let arrName = payload.data.arrName;
+      let freelance = payload.freelance;
+
+      if (payload.data.deleted.length) {
+        state[`${freelance}Projects`][arrName] = state[`${freelance}Projects`][arrName].filter((proj) => {
+          return payload.data.deleted.indexOf(proj.link) === -1;
+        });
+      }
+
+      if (payload.data[arrName].length) {
+        state[`${freelance}Projects`][arrName].unshift(...payload.data[arrName].map((obj) => Object.assign({}, obj)));
       }
     },
     addNewProjects(state, payload) {
       let newProjects = state[`${payload.freelance}NewProjects`];
-      for (const proj in payload.data) {
-        newProjects[proj] === undefined
-          ? Vue.set(
-              newProjects,
-              '' + proj,
-              payload.data[proj].map((obj) => Object.assign({}, obj))
-            )
-          : Vue.set(newProjects, '' + proj, [
-              ...newProjects[proj].map((obj) => Object.assign({}, obj)),
-              ...payload.data[proj].map((obj) => Object.assign({}, obj)),
-            ]);
-      }
+      let arrName = payload.data.arrName;
+      newProjects[arrName] === undefined
+        ? Vue.set(
+            newProjects,
+            '' + arrName,
+            payload.data[arrName].map((obj) => Object.assign({}, obj))
+          )
+        : Vue.set(newProjects, '' + arrName, [
+            ...newProjects[arrName].map((obj) => Object.assign({}, obj)),
+            ...payload.data[arrName].map((obj) => Object.assign({}, obj)),
+          ]);
     },
     resetNewProjects(state, payload) {
       while (state[`${payload.freelance}NewProjects`][payload.section].length !== 0) {
         state[`${payload.freelance}NewProjects`][payload.section].splice(0, 1);
-      }
-    },
-    addToProjects(state, payload) {
-      if (state[`${payload.freelance}Projects`] === null) {
-        state[`${payload.freelance}Projects`] = {};
-      }
-      for (const proj in payload.data) {
-        Vue.set(
-          state[`${payload.freelance}Projects`],
-          '' + proj,
-          payload.data[proj].map((obj) => Object.assign({}, obj))
-        );
       }
     },
   },
@@ -172,7 +166,7 @@ export default new Vuex.Store({
         console.log(error);
       }
     },
-    async readProjects({ commit, state }, payload) {
+    async readProjects({ commit }, payload) {
       let freelance = payload.freelance;
 
       commit('clearError');
@@ -183,33 +177,28 @@ export default new Vuex.Store({
 
         let cnt = response.data.cnt;
         let date = response.data.date;
+        let newExists = false;
         while (cnt !== 0) {
           let projects = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=${cnt}&first=${payload.firstTime}`);
           cnt = projects.data.cnt;
           delete projects.data.cnt;
-          console.log(projects.data);
 
-          commit(`addToProjects`, { data: projects.data, freelance });
-        }
-
-        let prevProjects = state[`${freelance}PrevProjects`];
-        let curProjects = state[`${freelance}Projects`];
-        if (prevProjects !== null) {
-          let newProjects = {};
-          for (const proj in prevProjects) {
-            let newProj = diff(prevProjects[proj], curProjects[proj]);
-            newProjects[proj] = newProj;
-            // console.log(newProj);
-          }
-          // console.log(newProjects);
-          if (newExists(newProjects)) {
-            let sound = new Audio(require('@/assets/sms.mp3'));
-            sound.volume = 0.8;
-            sound.play();
-            commit(`addNewProjects`, { data: newProjects, freelance });
+          if (payload.firstTime) {
+            commit(`setProjects`, { data: projects.data, freelance });
+          } else {
+            if (projects.data[projects.data.arrName].length) newExists = true;
+            if (projects.data[projects.data.arrName].length || projects.data.deleted.length) {
+              commit(`addNewProjects`, { data: projects.data, freelance });
+              commit(`addToProjects`, { data: projects.data, freelance });
+            }
           }
         }
-        commit(`setPrevProjects`, { freelance });
+
+        if (newExists) {
+          let sound = new Audio(require('@/assets/sms.mp3'));
+          sound.volume = 0.8;
+          sound.play();
+        }
         commit(`setLoading`, { val: false, freelance });
         return date;
       } catch (error) {
