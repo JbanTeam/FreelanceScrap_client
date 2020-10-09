@@ -136,6 +136,15 @@ export default new Vuex.Store({
     },
   },
   actions: {
+    // eslint-disable-next-line no-unused-vars
+    async abortLoad({ commit }, payload) {
+      try {
+        return await axios.get(`http://localhost:5000/api/${payload.freelance}-abort`);
+        // console.log(run.data);
+      } catch (error) {
+        console.log(error);
+      }
+    },
     async fetchProjects({ commit }, payload) {
       let freelance = payload.freelance;
       let type;

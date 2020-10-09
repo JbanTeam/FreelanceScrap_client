@@ -2,6 +2,7 @@
   <div class="freelance-section">
     <h4 class="bg-warning font-weight-bold mb-4 p-2">{{freelance}}</h4>
     <button class="load-btn mr-5" :class="{'disabled': loading || btnDisabled}" :disabled="loading || btnDisabled" @click="load">Load</button>
+    <button class="abort-btn mr-5" :class="{'disabled': loading || !btnDisabled || abortBtnDisabled}" :disabled="loading || !btnDisabled || abortBtnDisabled" @click="abortLoad">Abort</button>
     <span v-if="updateTime !== null" class="text-danger font-weight-bold mr-5">Last Update: <span class="text-dark">{{updateTime}}</span></span>
     <span v-if="nextUpdate !== null" class="text-danger font-weight-bold">Next Update: <span class="text-dark">{{nextUpdate}}</span></span>
     <p v-if="loading">Loading...</p>
@@ -27,8 +28,10 @@ export default {
   data() {
     return {
       btnDisabled: false,
+      abortBtnDisabled: false,
       updateTime: null,
       nextUpdate: null,
+      interval: null,
       sound: null,
     };
   },
@@ -38,7 +41,6 @@ export default {
     },
   },
   methods: {
-    // TODO: abort method
     async load() {
       this.btnDisabled = true;
       let run = await this.$store.dispatch(`fetchProjects`, {
@@ -66,14 +68,29 @@ export default {
       let seconds = start.minutes() * 60;
       this.updateTime = date;
       this.nextUpdate = start.format("m:ss");
-      let interval = setInterval(async () => {
+      this.interval = setInterval(async () => {
         this.nextUpdate = start.subtract(1, "second").format("m:ss");
         seconds--;
         if (seconds === 0) {
-          clearInterval(interval);
+          clearInterval(this.interval);
           await this.recursiveLoad(false);
         }
       }, 1000);
+    },
+    async abortLoad() {
+      this.abortBtnDisabled = true;
+      let freelance = this.freelance.toLowerCase();
+      let { data } = await this.$store.dispatch(`abortLoad`, {
+        freelance,
+      });
+
+      if (data.aborted) {
+        this.$store.commit(`setLoading`, { val: false, freelance });
+        this.btnDisabled = false;
+        clearInterval(this.interval);
+        this.nextUpdate = "none";
+        this.abortBtnDisabled = false;
+      }
     },
   },
 };

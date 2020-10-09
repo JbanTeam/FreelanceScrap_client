@@ -48,7 +48,8 @@ picture {
   text-align: center;
 }
 
-.load-btn {
+.load-btn,
+.abort-btn {
   border: none;
   outline: none;
   padding: 10px;
@@ -57,10 +58,15 @@ picture {
   border-radius: 5px;
   margin-bottom: 10px;
 }
-.load-btn:focus {
+.abort-btn {
+  background-color: #dc3545;
+}
+.load-btn:focus,
+.abort-btn:focus {
   outline: none;
 }
-.load-btn.disabled {
+.load-btn.disabled,
+.abort-btn.disabled {
   background-color: #b8b8b8;
   cursor: no-drop;
 }
