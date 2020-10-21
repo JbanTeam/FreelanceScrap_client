@@ -54,7 +54,6 @@ export default {
       console.log(`${this.freelance} start projects read`);
       try {
         let date = await this.$store.dispatch(`readProjects`, {
-          cnt: 0,
           freelance: this.freelance.toLowerCase(),
           firstTime,
         });

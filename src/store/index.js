@@ -177,22 +177,23 @@ export default new Vuex.Store({
     },
     async readProjects({ commit }, payload) {
       let freelance = payload.freelance;
+      let firstTime = payload.firstTime;
 
       commit('clearError');
       commit(`setLoading`, { val: true, freelance });
       try {
-        let response = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=${payload.cnt}&first=${payload.firstTime}`);
+        let response = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=0&firstTime=${firstTime}`);
         // console.log(projects.data);
 
         let cnt = response.data.cnt;
         let date = response.data.date;
         let newExists = false;
         while (cnt !== 0) {
-          let projects = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=${cnt}&first=${payload.firstTime}`);
+          let projects = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=${cnt}&firstTime=${firstTime}`);
           cnt = projects.data.cnt;
           delete projects.data.cnt;
 
-          if (payload.firstTime) {
+          if (firstTime) {
             commit(`setProjects`, { data: projects.data, freelance });
           } else {
             if (projects.data[projects.data.arrName].length) newExists = true;
