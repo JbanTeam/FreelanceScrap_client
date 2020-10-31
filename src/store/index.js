@@ -13,22 +13,27 @@ export default new Vuex.Store({
     weblancerLoading: false,
     weblancerProjects: null,
     weblancerNewProjects: {},
+    weblancerNewProjectsAll: {},
     flhuntError: '',
     flhuntLoading: false,
     flhuntProjects: null,
     flhuntNewProjects: {},
+    flhuntNewProjectsAll: {},
     flhabrError: '',
     flhabrLoading: false,
     flhabrProjects: null,
     flhabrNewProjects: {},
+    flhabrNewProjectsAll: {},
     freelanceruError: '',
     freelanceruLoading: false,
     freelanceruProjects: null,
     freelanceruNewProjects: {},
+    freelanceruNewProjectsAll: {},
     flruError: '',
     flruLoading: false,
     flruProjects: null,
     flruNewProjects: {},
+    flruNewProjectsAll: {},
   },
   getters: {
     getWeblancerProjects(state) {
@@ -100,38 +105,19 @@ export default new Vuex.Store({
         payload.data[arrName].map((obj) => Object.assign({}, obj))
       );
     },
-    addToProjects(state, payload) {
-      console.log(payload.data);
-      let arrName = payload.data.arrName;
-      let freelance = payload.freelance;
-
-      if (payload.data.deleted.length) {
-        state[`${freelance}Projects`][arrName] = state[`${freelance}Projects`][arrName].filter((proj) => {
-          return payload.data.deleted.indexOf(proj.link) === -1;
-        });
-      }
-
-      if (payload.data[arrName].length) {
-        state[`${freelance}Projects`][arrName].unshift(...payload.data[arrName].map((obj) => Object.assign({}, obj)));
-      }
-    },
-    addNewProjects(state, payload) {
-      let newProjects = state[`${payload.freelance}NewProjects`];
-      let arrName = payload.data.arrName;
-      newProjects[arrName] === undefined
-        ? Vue.set(
-            newProjects,
-            '' + arrName,
-            payload.data[arrName].map((obj) => Object.assign({}, obj))
-          )
-        : Vue.set(newProjects, '' + arrName, [
-            ...newProjects[arrName].map((obj) => Object.assign({}, obj)),
-            ...payload.data[arrName].map((obj) => Object.assign({}, obj)),
-          ]);
-    },
     resetNewProjects(state, payload) {
       while (state[`${payload.freelance}NewProjects`][payload.section].length !== 0) {
         state[`${payload.freelance}NewProjects`][payload.section].splice(0, 1);
+      }
+    },
+    resetNewProjectsAll(state, payload) {
+      let freelance = payload.freelance;
+      let arrName = payload.data.arrName;
+      let newProjects = state[`${freelance}NewProjects`];
+      let newProjectsAll = state[`${freelance}NewProjectsAll`];
+
+      if (newProjects[arrName] !== undefined) {
+        newProjects[arrName].length ? (newProjectsAll[arrName] = newProjects[arrName].map((proj) => proj.link)) : (newProjectsAll[arrName] = []);
       }
     },
   },
@@ -144,6 +130,53 @@ export default new Vuex.Store({
       } catch (error) {
         console.log(error);
       }
+    },
+    async addNewProjects({ state }, payload) {
+      let freelance = payload.freelance;
+      let arrName = payload.data.arrName;
+      let newProjects = state[`${freelance}NewProjects`];
+      let newProjectsAll = state[`${freelance}NewProjectsAll`];
+      let projects = payload.data[arrName];
+      let deleted = payload.data.deleted;
+      let newExists = false;
+
+      if (projects.length) {
+        // add new projects to newProjects
+        if (newProjects[arrName] === undefined) {
+          Vue.set(
+            newProjects,
+            '' + arrName,
+            projects.map((obj) => Object.assign({}, obj))
+          );
+          newProjectsAll[arrName] = projects.map((proj) => proj.link);
+          newExists = true;
+        } else {
+          projects = projects.filter((proj) => newProjectsAll[arrName].indexOf(proj.link) === -1);
+          if (projects.length) {
+            console.log(arrName, projects.length);
+
+            newProjectsAll[arrName] = [...projects.map((proj) => proj.link), ...newProjectsAll[arrName]];
+            Vue.set(newProjects, '' + arrName, [
+              ...projects.map((obj) => Object.assign({}, obj)),
+              ...newProjects[arrName].map((obj) => Object.assign({}, obj)),
+            ]);
+            newExists = true;
+          }
+        }
+      }
+
+      // update projects (add new projects to projects, delete old from projects)
+      if (deleted.length) {
+        state[`${freelance}Projects`][arrName] = state[`${freelance}Projects`][arrName].filter((proj) => {
+          return deleted.indexOf(proj.link) === -1;
+        });
+      }
+
+      if (projects.length) {
+        state[`${freelance}Projects`][arrName].unshift(...projects.map((obj) => Object.assign({}, obj)));
+      }
+
+      return newExists;
     },
     async fetchProjects({ commit }, payload) {
       let freelance = payload.freelance;
@@ -175,7 +208,7 @@ export default new Vuex.Store({
         console.log(error);
       }
     },
-    async readProjects({ commit }, payload) {
+    async readProjects({ dispatch, commit }, payload) {
       let freelance = payload.freelance;
       let firstTime = payload.firstTime;
 
@@ -191,15 +224,17 @@ export default new Vuex.Store({
         while (cnt !== 0) {
           let projects = await axios.get(`http://localhost:5000/api/${freelance}-projects?cnt=${cnt}&firstTime=${firstTime}`);
           cnt = projects.data.cnt;
+          let arrName = projects.data.arrName;
           delete projects.data.cnt;
 
           if (firstTime) {
             commit(`setProjects`, { data: projects.data, freelance });
           } else {
-            if (projects.data[projects.data.arrName].length) newExists = true;
-            if (projects.data[projects.data.arrName].length || projects.data.deleted.length) {
-              commit(`addNewProjects`, { data: projects.data, freelance });
-              commit(`addToProjects`, { data: projects.data, freelance });
+            if (projects.data[arrName].length || projects.data.deleted.length) {
+              let res = await dispatch(`addNewProjects`, { data: projects.data, freelance });
+              if (!newExists) newExists = res;
+            } else {
+              if (projects.data.newProjectsCleaned) commit('resetNewProjectsAll', { data: projects.data, freelance });
             }
           }
         }

@@ -4,7 +4,7 @@
       <span v-if="proj.premium !== undefined && proj.premium" class="text-danger ml-2">"Premium"</span>
       <span v-if="proj.fast !== undefined && proj.fast" class="text-danger ml-2">"Fast"</span>
       <span v-if="proj.fixed !== undefined && proj.fixed" class="text-danger ml-2">"Fixed"</span>
-      <span v-if="newProj" class="text-danger">"New"</span>
+      <span v-if="newProj" class="text-danger ml-2">"New"</span>
     </h5>
     <a class="mb-1" :href="proj.link" target="_blank" rel="noopener noreferrer">{{proj.link}}</a>
     <span class="mb-1 font-weight-bold">Bets: <span class="text-size" :class="betsClass">{{bets}}</span></span>

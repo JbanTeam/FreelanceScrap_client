@@ -33,6 +33,7 @@ export default {
       nextUpdate: null,
       interval: null,
       sound: null,
+      firstTime: true,
     };
   },
   computed: {
@@ -47,7 +48,8 @@ export default {
         freelance: this.freelance.toLowerCase(),
       });
       if (run.data.start) {
-        await this.recursiveLoad(true);
+        await this.recursiveLoad(this.firstTime);
+        this.firstTime = false;
       }
     },
     async recursiveLoad(firstTime) {
@@ -72,7 +74,7 @@ export default {
         seconds--;
         if (seconds === 0) {
           clearInterval(this.interval);
-          await this.recursiveLoad(false);
+          await this.recursiveLoad(this.firstTime);
         }
       }, 1000);
     },
