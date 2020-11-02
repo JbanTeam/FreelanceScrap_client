@@ -65,7 +65,7 @@ export default {
       }
     },
     async nextLoad(date) {
-      let start = moment("1:00", "m:ss");
+      let start = moment("3:00", "m:ss");
       let seconds = start.minutes() * 60;
       this.updateTime = date;
       this.nextUpdate = start.format("m:ss");
