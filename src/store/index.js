@@ -96,6 +96,10 @@ export default new Vuex.Store({
     updateProjects(state, payload) {
       let { freelance, arrName, projects, deleted } = payload;
 
+      if (state[`${freelance}Projects`] === null) {
+        state[`${freelance}Projects`] = {};
+      }
+
       if (deleted && deleted.length) {
         state[`${freelance}Projects`][arrName] = state[`${freelance}Projects`][arrName].filter((proj) => {
           return deleted.indexOf(proj.link) === -1;
@@ -103,7 +107,15 @@ export default new Vuex.Store({
       }
 
       if (projects && projects.length) {
-        state[`${freelance}Projects`][arrName].unshift(...projects.map((obj) => Object.assign({}, obj)));
+        if (state[`${freelance}Projects`][arrName] === undefined) {
+          Vue.set(
+            state[`${freelance}Projects`],
+            '' + arrName,
+            projects.map((obj) => Object.assign({}, obj))
+          );
+        } else {
+          state[`${freelance}Projects`][arrName].unshift(...projects.map((obj) => Object.assign({}, obj)));
+        }
       }
     },
     resetNewProjects(state, payload) {
