@@ -42,16 +42,19 @@ export default {
     },
   },
   methods: {
+    // начать загрузку
     async load() {
       this.btnDisabled = true;
       let run = await this.$store.dispatch(`fetchProjects`, {
         freelance: this.freelance.toLowerCase(),
       });
       if (run.data.start) {
+        // повтор чтения проектов каждые 3 минуты
         await this.recursiveLoad(this.firstTime);
         this.firstTime = false;
       }
     },
+    // рекурсивная функция чтения проектов
     async recursiveLoad(firstTime) {
       console.log(`${this.freelance} start projects read`);
       try {
@@ -64,6 +67,7 @@ export default {
         console.log(error);
       }
     },
+    // следующая загрузка через 3 мин
     async nextLoad(date) {
       let start = moment("3:00", "m:ss");
       let seconds = start.minutes() * 60;
@@ -72,20 +76,23 @@ export default {
       this.interval = setInterval(async () => {
         this.nextUpdate = start.subtract(1, "second").format("m:ss");
         seconds--;
+        // при истечении 3 мин очищаем интервал и запускаем функцию поновой
         if (seconds === 0) {
           clearInterval(this.interval);
           await this.recursiveLoad(this.firstTime);
         }
       }, 1000);
     },
+    // прервать загрузку
     async abortLoad() {
       this.abortBtnDisabled = true;
       let freelance = this.freelance.toLowerCase();
-      let { data } = await this.$store.dispatch(`abortLoad`, {
+      let abort = await this.$store.dispatch(`abortLoad`, {
         freelance,
       });
 
-      if (data.aborted) {
+      // сбрасываем интервал и переменные
+      if (abort.data.aborted) {
         this.$store.commit(`setLoading`, { val: false, freelance });
         this.btnDisabled = false;
         clearInterval(this.interval);

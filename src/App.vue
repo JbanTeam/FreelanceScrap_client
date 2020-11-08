@@ -8,6 +8,7 @@
         </a>
       </div>
       <div class="tabs-content">
+        <!-- компоненты бирж в цикле -->
         <div :id="component.title" class="tabs-content__item" :class="{'active': isActive(component.title)}" v-for="component in flComponents" :key="component.title">
           <component :is="'Freelance'" :freelance="component.component" :projects="component.projects" :newProjects="component.newProjects"></component>
         </div>
@@ -78,6 +79,7 @@ export default {
         },
       ];
     },
+    // флаг имеются ли новые проеты
     newProjectsExists() {
       return (projects) => {
         for (const proj in projects) {

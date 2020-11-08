@@ -93,6 +93,7 @@ export default new Vuex.Store({
     setLoading(state, payload) {
       state[`${payload.freelance}Loading`] = payload.val;
     },
+    // обновляем все проекты
     updateProjects(state, payload) {
       let { freelance, arrName, projects, deleted } = payload;
 
@@ -118,11 +119,13 @@ export default new Vuex.Store({
         }
       }
     },
+    // сбрасываем новые проекты
     resetNewProjects(state, payload) {
       while (state[`${payload.freelance}NewProjects`][payload.section].length !== 0) {
         state[`${payload.freelance}NewProjects`][payload.section].splice(0, 1);
       }
     },
+    // сбрасываем все неовые проекты (ссылки на них), если newProjects.len === 0, то newProjectsAll = [], если нет то оставляем в newProjectsAll только ссылки на проекты, которые есть в newProjects
     resetNewProjectsAll(state, payload) {
       let freelance = payload.freelance;
       let arrName = payload.data.arrName;
@@ -135,6 +138,7 @@ export default new Vuex.Store({
     },
   },
   actions: {
+    // прервать загрузку
     // eslint-disable-next-line no-unused-vars
     async abortLoad({ state, commit }, payload) {
       try {
@@ -144,6 +148,7 @@ export default new Vuex.Store({
         console.log(error);
       }
     },
+    // записываем проекты при первичном прочтении их с сервера
     async setProjects({ state, commit }, payload) {
       let { arrName, deleted } = payload.data;
       let newPrjcts = payload.data.newProjects;
@@ -160,6 +165,7 @@ export default new Vuex.Store({
         projects.map((obj) => Object.assign({}, obj))
       );
 
+      // если есть новые(проиходит если на сервере нет db/*.json или он пуст)
       if (newPrjcts !== null) {
         let newProjects = state[`${freelance}NewProjects`];
         let newProjectsAll = state[`${freelance}NewProjectsAll`];
@@ -173,10 +179,13 @@ export default new Vuex.Store({
         newExists = true;
       }
 
+      // обновляем все проекты(добавляем новые, удаляем те, которых уже нет)
       commit('updateProjects', { freelance, arrName, projects: newPrjcts, deleted });
 
+      // возвращаем флаг "есть ли новые проекты"
       return newExists;
     },
+    // добавляем новые проекты
     async addNewProjects({ state, commit }, payload) {
       let freelance = payload.freelance;
       let arrName = payload.data.arrName;
@@ -187,7 +196,7 @@ export default new Vuex.Store({
       let newExists = false;
 
       if (projects.length) {
-        // add new projects to newProjects
+        // если массив соответствующего раздела еще не существует
         if (newProjects[arrName] === undefined) {
           Vue.set(
             newProjects,
@@ -197,6 +206,7 @@ export default new Vuex.Store({
           newProjectsAll[arrName] = projects.map((proj) => proj.link);
           newExists = true;
         } else {
+          // если существует
           projects = projects.filter((proj) => newProjectsAll[arrName].indexOf(proj.link) === -1);
           if (projects.length) {
             console.log(arrName, projects.length);
@@ -211,11 +221,12 @@ export default new Vuex.Store({
         }
       }
 
-      // update projects (add new projects to projects, delete old from projects)
+      // обновляем все проекты(добавляем новые, удаляем те, которых уже нет)
       commit('updateProjects', { freelance, arrName, projects, deleted });
-
+      // возвращаем флаг "есть ли новые проекты"
       return newExists;
     },
+    // начинаем загрузку
     async fetchProjects({ state, commit }, payload) {
       let freelance = payload.freelance;
       let type;
@@ -246,6 +257,7 @@ export default new Vuex.Store({
         console.log(error);
       }
     },
+    // читаем проекты
     async readProjects({ state, dispatch, commit }, payload) {
       let freelance = payload.freelance;
       let firstTime = payload.firstTime;
@@ -253,31 +265,39 @@ export default new Vuex.Store({
       commit('clearError');
       commit(`setLoading`, { val: true, freelance });
       try {
+        // первый запрос возвращает нам количество разделов(массивов)
         let response = await axios.get(`${state.url}/api/${freelance}-projects?cnt=0&firstTime=${firstTime}`);
         // console.log(projects.data);
 
         let cnt = response.data.cnt;
         let date = response.data.date;
         let newExists = false;
+        // пока количество непрочитанных разделов не равно 0, то посылаем запрос на чтение раздела
         while (cnt !== 0) {
           let projects = await axios.get(`${state.url}/api/${freelance}-projects?cnt=${cnt}&firstTime=${firstTime}`);
           cnt = projects.data.cnt;
           let arrName = projects.data.arrName;
           delete projects.data.cnt;
 
+          // если читаем первый раз
           if (firstTime) {
             let res = await dispatch(`setProjects`, { data: projects.data, freelance });
+            // если есть новые
             if (!newExists) newExists = res;
           } else {
+            // если не первый раз
             if (projects.data[arrName].length || projects.data.deleted.length) {
+              // если в ответе длина массива раздела или массива "удаленные" не равна 0
               let res = await dispatch(`addNewProjects`, { data: projects.data, freelance });
               if (!newExists) newExists = res;
             } else {
+              // если равна 0, смотрим на флаг были ли очищены новые проекты на сервере, если да то чистим их и на клиенте
               if (projects.data.newProjectsCleaned) commit('resetNewProjectsAll', { data: projects.data, freelance });
             }
           }
         }
 
+        // если есть новые то проигрываем звук уведомления
         if (newExists) {
           let sound = new Audio(require('@/assets/sms.mp3'));
           sound.volume = 0.8;

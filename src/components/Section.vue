@@ -1,4 +1,5 @@
 <template>
+  <!-- компонент раздела -->
   <section class="section">
     <h4 class="section-title font-weight-bold d-flex align-items-center bg-primary p-1 mb-2" @click="opened = !opened">
       <span>{{section}} - <span class="projects-count text-warning mr-5">{{projects.length}}</span></span>
@@ -46,12 +47,14 @@ export default {
     };
   },
   computed: {
+    // количество страниц проектов в пагинации
     pageCnt() {
       let curProjLen = this.allOpened
         ? this.projects.length
         : this.newProjects.length;
       return Math.ceil(curProjLen / this.cardsPerPage);
     },
+    // количество проектов на одной странице пагинации
     projectsPerPage() {
       const start = this.currentPage * this.cardsPerPage;
       const end = start + this.cardsPerPage;
@@ -61,20 +64,24 @@ export default {
     },
   },
   methods: {
+    // следующая страница пагинации
     nextPage() {
       if (this.currentPage === this.pageCnt - 1 || !this.opened) return;
       this.allOpened ? this.allPage++ : this.newPage++;
       this.currentPage++;
     },
+    // предыдущая страница пагинации
     prevPage() {
       if (this.currentPage === 0 || !this.opened) return;
       this.allOpened ? this.allPage-- : this.newPage--;
       this.currentPage--;
     },
+    // определяет какие проекты открыты all/new
     cardsOpen() {
       this.allOpened = !this.allOpened;
       this.currentPage = this.allOpened ? this.allPage : this.newPage;
     },
+    // сброисть новые проекты
     resetNew() {
       this.allOpened = true;
       this.$store.commit("resetNewProjects", {

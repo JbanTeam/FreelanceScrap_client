@@ -1,4 +1,5 @@
 <template>
+  <!-- компонент одного проекта -->
   <div class="card bg-light" @click="cardOpen($event)">
     <h5 class="mb-1 font-weight-bold">{{proj.title}}
       <span v-if="proj.premium !== undefined && proj.premium" class="text-danger ml-2">"Premium"</span>
@@ -30,6 +31,7 @@ export default {
     };
   },
   computed: {
+    // цвет пункта "заявки"
     betsClass() {
       return parseInt(this.proj.bets) <= 5
         ? "text-success"
@@ -37,24 +39,31 @@ export default {
         ? "text-warning"
         : "text-danger";
     },
+    // количество заявок на данном проекте
     bets() {
       return this.proj.bets;
     },
+    // описание
     description() {
       return this.proj.description === null ? "null" : this.proj.description;
     },
+    // бюджет данного проекта
     budget() {
       return this.proj.budget === null ? "null" : this.proj.budget;
     },
+    // необходимые навыки
     skills() {
       return this.proj.skills === null ? "null" : this.proj.skills;
     },
+    // время когда опубликован
     time() {
       return this.proj.time === null ? "null" : this.proj.time;
     },
+    // когда опубликован в милисекундах
     published() {
       return this.proj.published === null ? "null" : this.proj.published;
     },
+    // флаг "новый проект или нет"
     newProj() {
       if (this.newProjects !== undefined) {
         let arr = [];
@@ -67,6 +76,7 @@ export default {
     },
   },
   methods: {
+    // флаг открытыя карточки проекта
     cardOpen(e) {
       if (e.target.tagName === "A") return;
       this.secondaryOpened = !this.secondaryOpened;
